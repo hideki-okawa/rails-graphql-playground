@@ -1,0 +1,79 @@
+name: test
+
+on: [pull_request]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  rspec:
+    name: RSpec
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        ports:
+          - 3306:3306
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+        options: --health-cmd "mysqladmin ping" --health-interval 10s --health-timeout 5s --health-retries 10
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Detect Ruby version
+        id: ruby-version
+        run: echo "::set-output name=VERSION::$(cat .ruby-version)"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '${{ steps.ruby-version.outputs.VERSION }}'
+
+      - name: Bundler and gem install
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3 --path vendor/bundle
+
+      - name: Database create and migrate
+        run: |
+          cp config/database.yml.ci config/database.yml
+          bundle exec rails db:create RAILS_ENV=test
+          bundle exec rails db:migrate RAILS_ENV=test
+
+      - name: Run RSpec
+        run: bundle exec rspec
+
+  rubocop:
+    name: RuboCop
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Detect Ruby version
+        id: ruby-version
+        run: echo "::set-output name=VERSION::$(cat .ruby-version)"
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '${{ steps.ruby-version.outputs.VERSION }}'
+
+      - name: Set up Node
+        uses: volta-cli/action@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run RuboCop
+        uses: reviewdog/action-rubocop@v2
+        with:
+          rubocop_version: gemfile
+          rubocop_extensions: rubocop-rails:gemfile rubocop-rspec:gemfile rubocop-factory_bot:gemfile rubocop-graphql:gemfile
+          reporter: github-pr-review
+          fail_on_error: true

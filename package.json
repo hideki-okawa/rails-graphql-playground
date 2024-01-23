@@ -1,0 +1,19 @@
+{
+  "name": "rails-graphql-template",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/hideki-okawa/rails-graphql-template.git",
+  "author": "hideki-okawa <h.okawa0303@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@prettier/plugin-ruby": "3.2.2",
+    "prettier": "2.8.8"
+  },
+  "scripts": {
+    "format": "./node_modules/.bin/prettier --plugin=@prettier/plugin-ruby --write '**/(*.(rb|ru|rake)|Gemfile|Rakefile)'"
+  },
+  "volta": {
+    "node": "18.17.0",
+    "yarn": "1.22.19"
+  }
+}
